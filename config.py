@@ -1,0 +1,5 @@
+# config.py
+
+BOT_TOKEN     = "8215175203:AAFVrbS72BK11vJ79VPUU47sEf_2kW_PSeQ"
+ADMIN_USER_ID = 1998822762
+DB_PATH       = "data/bot.db"
