@@ -706,12 +706,7 @@ async def _launch_userbot(client: TelegramClient = None):
         if get_settings().get("should_edit", False):
             await _process(event)
 
-    def _run_telethon():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(active_client.run_until_disconnected())
-
-    threading.Thread(target=_run_telethon, daemon=True).start()
+    asyncio.ensure_future(active_client.run_until_disconnected())
     logger.info("✅ Userbot monitor started")
 
 
