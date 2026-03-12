@@ -1,5 +1,5 @@
-# config.py
+import os
 
-BOT_TOKEN     = "8215175203:AAFVrbS72BK11vJ79VPUU47sEf_2kW_PSeQ"
-ADMIN_USER_ID = 1998822762
+BOT_TOKEN     = os.environ.get("BOT_TOKEN", "")
+ADMIN_USER_ID = int(os.environ.get("ADMIN_USER_ID", "0"))
 DB_PATH       = "data/bot.db"
