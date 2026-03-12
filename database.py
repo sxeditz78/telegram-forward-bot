@@ -4,8 +4,6 @@ import json
 import os
 import sqlite3
 
-from config import DB_PATH
-
 
 def get_conn() -> sqlite3.Connection:
     os.makedirs("data", exist_ok=True)
