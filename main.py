@@ -53,8 +53,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ForwardBot")
 
-active_client: TelegramClient = None
-monitor_running: bool = False
+active_client = None
+monitor_running = False
 DIV = "━━━━━━━━━━━━━━━━━━━━━━━━"
 
 (
@@ -246,6 +246,7 @@ async def cmd_status(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def _reply_status(msg):
+    global monitor_running
     s         = get_settings()
     stats     = get_stats()
     src       = get_all_sources()
@@ -608,10 +609,10 @@ async def _render_transform(target, edit=False):
 
 
 async def cb_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    global active_client, monitor_running
     query = update.callback_query
     await query.answer()
     data  = query.data
-
     if data.startswith("toggle:"):
         _, key, default_str = data.split(":", 2)
         s       = get_settings()
@@ -619,11 +620,9 @@ async def cb_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         save_settings(s)
         await _render_transform(query, edit=True)
         return
-
     if data == "go:transform":
         await _render_transform(query, edit=True)
         return
-
     if data == "go:back":
         s = get_settings(); creds = get_api_creds(); stats = get_stats()
         src = get_all_sources(); dst = get_all_destinations()
@@ -644,7 +643,6 @@ async def cb_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         ]
         await query.edit_message_text(text, parse_mode="MarkdownV2", reply_markup=InlineKeyboardMarkup(kb))
         return
-
     if data == "go:status":
         s = get_settings(); stats = get_stats(); src = get_all_sources(); dst = get_all_destinations(); creds = get_api_creds()
         checked = stats.get("posts_checked", 0); forwarded = stats.get("posts_forwarded", 0); ignored = stats.get("posts_ignored", 0)
@@ -661,22 +659,21 @@ async def cb_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         kb = [[InlineKeyboardButton("🔄 Refresh", callback_data="go:status"), InlineKeyboardButton("🏠 Back", callback_data="go:back")]]
         await query.edit_message_text(text, parse_mode="MarkdownV2", reply_markup=InlineKeyboardMarkup(kb))
         return
-
     if data == "go:logout":
         kb = [[InlineKeyboardButton("✅ Yes, Logout", callback_data="do:logout")], [InlineKeyboardButton("❌ Cancel", callback_data="go:back")]]
         await query.edit_message_text("🔓 *Logout?*\n\nThis will disconnect your account and stop monitoring\\.", parse_mode="MarkdownV2", reply_markup=InlineKeyboardMarkup(kb))
         return
-
     if data == "do:logout":
-        global active_client, monitor_running
         delete_session()
         if active_client:
-            try: await active_client.disconnect()
-            except: pass
-        active_client = None; monitor_running = False
+            try:
+                await active_client.disconnect()
+            except:
+                pass
+        active_client = None
+        monitor_running = False
         await query.edit_message_text("🔓 *Logged out\\!*\n\nUse /start to login again\\.", parse_mode="MarkdownV2")
         return
-
     hints = {"go:incoming": "/incoming", "go:outgoing": "/outgoing", "go:delay": "/delay",
              "go:filter": "/filter", "go:blacklist": "/blacklist", "go:whitelist": "/whitelist",
              "go:begin": "/begin_text", "go:end": "/end_text", "go:fusers": "/filter_users"}
@@ -733,6 +730,7 @@ async def _get_sender_info(event) -> dict:
 
 
 async def _process(event):
+    global active_client
     sources = [r["identifier"] for r in get_all_sources()]
     if not sources:
         return
