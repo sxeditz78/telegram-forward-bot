@@ -825,19 +825,6 @@ async def main():
     init_db()
     logger.info("🚀 Starting Advanced Forwarder Bot …")
 
-    session_str = get_session(); creds = get_api_creds()
-    if session_str and creds:
-        try:
-            client = TelegramClient(StringSession(session_str), creds["api_id"], creds["api_hash"])
-            await client.connect()
-            if await client.is_user_authorized():
-                await _launch_userbot(client)
-                logger.info("✅ Session restored — monitor running")
-            else:
-                logger.warning("⚠️ Session expired — re-login required via bot")
-        except Exception as e:
-            logger.error("Session restore error: %s", e)
-
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     login_conv = ConversationHandler(
@@ -889,8 +876,29 @@ async def main():
     app.add_handler(CommandHandler("status",    cmd_status))
     app.add_handler(CommandHandler("cancel",    cmd_cancel))
 
+    # Restore session on startup
+    session_str = get_session()
+    creds = get_api_creds()
+    if session_str and creds:
+        try:
+            client = TelegramClient(StringSession(session_str), creds["api_id"], creds["api_hash"])
+            await client.connect()
+            if await client.is_user_authorized():
+                await _launch_userbot(client)
+                logger.info("✅ Session restored — monitor running")
+            else:
+                logger.warning("⚠️ Session expired — re-login required via bot")
+        except Exception as e:
+            logger.error("Session restore error: %s", e)
+
     logger.info("🤖 Bot online — send /start in Telegram")
-    await app.run_polling(allowed_updates=Update.ALL_TYPES)
+
+    async with app:
+        await app.start()
+        await app.updater.start_polling(allowed_updates=Update.ALL_TYPES)
+        await asyncio.Event().wait()  # run forever
+        await app.updater.stop()
+        await app.stop()
 
 
 if __name__ == "__main__":
